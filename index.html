@@ -3,7 +3,7 @@
 <head>
   <!-- SEO Meta Tags -->
   <meta charset="UTF-8" />
-  <meta name="description" content="Convertium: Unit Converter - A versatile tool for converting between imperial, metric, and SI to Gaussian units including scientific notation and full SI prefixed unit conversions." />
+  <meta name="description" content="Convertium: Unit Converter - A versatile tool for converting between imperial, metric, and SI to Gaussian units including automatic scientific notation and full SI prefixed unit conversions with unit abbreviations." />
   <meta name="keywords" content="Convertium, Unit Converter, Scientific Notation, SI Prefix, Conversion, Imperial, Metric, Gaussian, units" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
@@ -33,15 +33,15 @@
       color: #333333;
     }
     .btn-primary {
-      background-color: #2d9cdb !important;
-      border-color: #2d9cdb !important;
+      background-color: #1d73a5 !important;
+      border-color: #1d73a5 !important;
     }
     .btn-outline-primary {
-      color: #2d9cdb !important;
-      border-color: #2d9cdb !important;
+      color: #1d73a5 !important;
+      border-color: #1d73a5 !important;
     }
     .btn-outline-primary:hover {
-      background-color: #2d9cdb !important;
+      background-color: #1d73a5 !important;
       color: #ffffff !important;
     }
     .result {
@@ -90,12 +90,6 @@
       <input type="number" id="inputValue" class="form-control" placeholder="Enter value to convert" />
     </div>
     
-    <!-- Scientific Notation Option -->
-    <div class="form-group form-check">
-      <input type="checkbox" class="form-check-input" id="sciNotation">
-      <label class="form-check-label" for="sciNotation">Display result in scientific notation</label>
-    </div>
-    
     <!-- Convert Button -->
     <button id="convertBtn" class="btn btn-primary btn-block">Convert</button>
     
@@ -110,7 +104,7 @@
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Conversion data structure
+      // Base conversion data (non-prefixed units)
       const conversionData = {
         "Length": {
           baseUnit: "meter",
@@ -128,7 +122,6 @@
           isLinear: true,
           units: {
             "kilogram": 1,
-            "gram": 0.001,
             "pound": 0.453592,
             "ounce": 0.0283495
           }
@@ -204,7 +197,7 @@
         }
       };
       
-      // SI prefixes (all in lower-case)
+      // SI prefixes and their factors
       const SIPrefixes = {
         "yotta": 1e24,
         "zetta": 1e21,
@@ -229,48 +222,133 @@
         "yocto": 1e-24
       };
       
-      // Helper function: adds SI prefixed units to a category.
-      // baseName: the unit name to prefix (e.g., "meter", "gram", "liter", "v/m", "tesla", "coulomb", "pascal", "meter/second")
-      // effectiveFactor: conversion factor for baseName relative to the category's base unit.
+      // SI prefix display mapping for abbreviations
+      const SIPrefixDisplay = {
+        "yotta": "Y",
+        "zetta": "Z",
+        "exa": "E",
+        "peta": "P",
+        "tera": "T",
+        "giga": "G",
+        "mega": "M",
+        "kilo": "k",
+        "hecto": "h",
+        "deka": "da",
+        "": "",
+        "deci": "d",
+        "centi": "c",
+        "milli": "m",
+        "micro": "μ",
+        "nano": "n",
+        "pico": "p",
+        "femto": "f",
+        "atto": "a",
+        "zepto": "z",
+        "yocto": "y"
+      };
+      
+      // Standard abbreviations for base units and non-prefixed units
+      const unitAbbreviations = {
+        "meter": "m",
+        "inch": "in",
+        "foot": "ft",
+        "yard": "yd",
+        "mile": "mi",
+        "kilogram": "kg",
+        "gram": "g",
+        "pound": "lb",
+        "ounce": "oz",
+        "liter": "L",
+        "cubic meter": "m³",
+        "cubic inch": "in³",
+        "gallon (us)": "gal",
+        "celsius": "°C",
+        "fahrenheit": "°F",
+        "kelvin": "K",
+        "v/m": "V/m",
+        "tesla": "T",
+        "coulomb": "C",
+        "pascal": "Pa",
+        "atmosphere": "atm",
+        "psi": "psi",
+        "meter/second": "m/s",
+        "kilometer/hour": "km/h",
+        "mile/hour": "mph",
+        "foot/second": "ft/s",
+        "centimeter/second": "cm/s"
+      };
+      
+      // Add SI prefixed units to a category.
       function addSIPrefixedUnits(category, baseName, effectiveFactor) {
         const unitsObj = conversionData[category].units;
         for (let prefix in SIPrefixes) {
-          if (prefix === "") continue; // skip the empty prefix (already defined)
-          let newKey = prefix + baseName; // e.g., "kilometer", "milligram", etc.
-          newKey = newKey.toLowerCase();
+          if (prefix === "") continue; // Skip the empty prefix (already defined)
+          let newKey = (prefix + baseName).toLowerCase();
           if (!(newKey in unitsObj)) {
             unitsObj[newKey] = effectiveFactor * SIPrefixes[prefix];
           }
         }
       }
       
-      // Generate all SI prefixed units for relevant categories.
-      // Length: base is "meter" (effective factor 1)
+      // Generate all SI prefixed units for SI-based categories.
       addSIPrefixedUnits("Length", "meter", 1);
-      // Mass: use "gram" as the base for prefixes (1 gram = 0.001 kilogram)
-      addSIPrefixedUnits("Mass", "gram", 0.001);
-      // Volume: base is "liter"
+      addSIPrefixedUnits("Mass", "gram", 0.001); // 1 gram = 0.001 kilogram
       addSIPrefixedUnits("Volume", "liter", 1);
-      // Electric Field: base is "v/m"
       addSIPrefixedUnits("Electric Field", "v/m", 1);
-      // Magnetic Field: base is "tesla"
       addSIPrefixedUnits("Magnetic Field", "tesla", 1);
-      // Electric Charge: base is "coulomb"
       addSIPrefixedUnits("Electric Charge", "coulomb", 1);
-      // Pressure: base is "pascal"
       addSIPrefixedUnits("Pressure", "pascal", 1);
-      // Speed: base is "meter/second"
       addSIPrefixedUnits("Speed", "meter/second", 1);
       
-      // Helper function to capitalize the first letter of each word.
+      // Capitalize first letter of each word.
       function capitalizeWords(str) {
         return str.replace(/\b\w/g, char => char.toUpperCase());
       }
       
+      // Format a unit string for the selection panel.
+      // Here we combine the SI prefix and base unit with no space, e.g. "Micrometer".
+      // Then we append the abbreviation in parentheses.
+      function formatUnit(unit) {
+        const prefixes = Object.keys(SIPrefixDisplay).filter(p => p !== "").sort((a, b) => b.length - a.length);
+        for (let prefix of prefixes) {
+          if (unit.startsWith(prefix)) {
+            let base = unit.slice(prefix.length);
+            if (!base) break;
+            // Combine prefix and base without an extra space.
+            let fullName = capitalizeWords(prefix + base);
+            let baseAbbr = unitAbbreviations[base] || base;
+            let abbr = SIPrefixDisplay[prefix] + baseAbbr;
+            return fullName + " (" + abbr + ")";
+          }
+        }
+        if (unitAbbreviations[unit]) {
+          return capitalizeWords(unit) + " (" + unitAbbreviations[unit] + ")";
+        }
+        return capitalizeWords(unit);
+      }
+      
+      // Return only the unit abbreviation.
+      function getUnitAbbr(unit) {
+        const prefixes = Object.keys(SIPrefixDisplay).filter(p => p !== "").sort((a, b) => b.length - a.length);
+        for (let prefix of prefixes) {
+          if (unit.startsWith(prefix)) {
+            let base = unit.slice(prefix.length);
+            let baseAbbr = unitAbbreviations[base] || base;
+            return SIPrefixDisplay[prefix] + baseAbbr;
+          }
+        }
+        if (unitAbbreviations[unit]) {
+          return unitAbbreviations[unit];
+        }
+        return unit;
+      }
+      
+      // Linear conversion: value * fromFactor / toFactor.
       function convertLinear(value, fromFactor, toFactor) {
         return value * fromFactor / toFactor;
       }
       
+      // Convert value based on the conversion data.
       function convertValue(category, fromUnit, toUnit, value) {
         const cat = conversionData[category];
         if (cat.isLinear) {
@@ -285,7 +363,7 @@
         }
       }
       
-      // Formats a number in appealing scientific notation (e.g., "1.234 × 10⁵")
+      // Format a number in scientific notation (e.g., "1.234 × 10⁵").
       function formatScientificNotation(value) {
         let expStr = value.toExponential(3); // e.g., "1.234e+5"
         let parts = expStr.split("e");
@@ -294,6 +372,7 @@
         return coefficient + " × 10<sup>" + exponent + "</sup>";
       }
       
+      // Populate the dropdowns with units.
       function updateUnitOptions() {
         const category = document.getElementById('category').value;
         const fromSelect = document.getElementById('fromUnit');
@@ -302,21 +381,23 @@
         toSelect.innerHTML = '';
         const units = conversionData[category].units;
         for (let unit in units) {
-          const displayUnit = capitalizeWords(unit);
-          const optionFrom = document.createElement('option');
+          const displayUnit = formatUnit(unit);
+          let optionFrom = document.createElement('option');
           optionFrom.value = unit;
           optionFrom.textContent = displayUnit;
           fromSelect.appendChild(optionFrom);
           
-          const optionTo = document.createElement('option');
+          let optionTo = document.createElement('option');
           optionTo.value = unit;
           optionTo.textContent = displayUnit;
           toSelect.appendChild(optionTo);
         }
         document.getElementById('inputValue').value = '';
-        document.getElementById('result').textContent = '';
+        document.getElementById('result').innerHTML = '';
       }
       
+      // Perform conversion and display the result.
+      // In the result, only unit abbreviations are shown.
       function performConversion() {
         const category = document.getElementById('category').value;
         const fromUnit = document.getElementById('fromUnit').value;
@@ -324,19 +405,19 @@
         const inputVal = parseFloat(document.getElementById('inputValue').value);
         
         if (isNaN(inputVal)) {
-          document.getElementById('result').textContent = 'Please enter a valid number.';
+          document.getElementById('result').innerHTML = 'Please enter a valid number.';
           return;
         }
         
         let result = convertValue(category, fromUnit, toUnit, inputVal);
-        if (document.getElementById('sciNotation').checked) {
-          result = formatScientificNotation(result);
-        }
-        const resultText = `${inputVal} ${capitalizeWords(fromUnit)} = ${result} ${capitalizeWords(toUnit)}`;
+        result = formatScientificNotation(result);
+        
+        const resultText = `${inputVal} ${getUnitAbbr(fromUnit)} = ${result} ${getUnitAbbr(toUnit)}`;
         document.getElementById('result').innerHTML = resultText;
         addToHistory(resultText);
       }
       
+      // Append the conversion result to the history list.
       function addToHistory(entry) {
         const historyList = document.getElementById('history');
         const li = document.createElement('li');
@@ -345,7 +426,7 @@
         historyList.prepend(li);
       }
       
-      // Event listeners
+      // Event listeners.
       document.getElementById('convertBtn').addEventListener('click', performConversion);
       document.getElementById('inputValue').addEventListener('keyup', function(event) {
         if (event.key === 'Enter') {
