@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- SEO Meta Tags -->
+  <meta charset="UTF-8" />
+  <meta name="description" content="Convertium: Unit Converter - A versatile tool for converting between imperial, metric, and SI to Gaussian units including scientific notation and full SI prefixed unit conversions." />
+  <meta name="keywords" content="Convertium, Unit Converter, Scientific Notation, SI Prefix, Conversion, Imperial, Metric, Gaussian, units" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Convertium: Unit Converter</title>
+  <!-- Bootstrap for responsive design -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    /* Clean Minimalistic Theme */
+    body {
+      font-family: 'Times New Roman', serif;
+      background-color: #ffffff;
+      color: #333333;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background-color: #ffffff;
+      padding: 20px;
+      border: 1px solid #e0e0e0;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    h1, h2 {
+      text-align: center;
+      color: #333333;
+    }
+    .btn-primary {
+      background-color: #2d9cdb !important;
+      border-color: #2d9cdb !important;
+    }
+    .btn-outline-primary {
+      color: #2d9cdb !important;
+      border-color: #2d9cdb !important;
+    }
+    .btn-outline-primary:hover {
+      background-color: #2d9cdb !important;
+      color: #ffffff !important;
+    }
+    .result {
+      font-size: 1.2em;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .history {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Convertium: Unit Converter</h1>
+    
+    <!-- Category Selection -->
+    <div class="form-group">
+      <label for="category">Select Physical Quantity:</label>
+      <select id="category" class="form-control">
+        <option value="Length">Length (Imperial/Metric)</option>
+        <option value="Mass">Mass (Imperial/Metric)</option>
+        <option value="Volume">Volume (Imperial/Metric)</option>
+        <option value="Temperature">Temperature (Imperial/Metric)</option>
+        <option value="Electric Field">Electric Field (SI/Gaussian)</option>
+        <option value="Magnetic Field">Magnetic Field (SI/Gaussian)</option>
+        <option value="Electric Charge">Electric Charge (SI/Gaussian)</option>
+        <option value="Pressure">Pressure</option>
+        <option value="Speed">Speed</option>
+      </select>
+    </div>
+    
+    <!-- Unit Selection -->
+    <div class="form-group">
+      <label for="fromUnit">From Unit:</label>
+      <select id="fromUnit" class="form-control"></select>
+    </div>
+    <div class="form-group">
+      <label for="toUnit">To Unit:</label>
+      <select id="toUnit" class="form-control"></select>
+    </div>
+    
+    <!-- Input Field for Conversion -->
+    <div class="form-group">
+      <label for="inputValue">Enter Value:</label>
+      <input type="number" id="inputValue" class="form-control" placeholder="Enter value to convert" />
+    </div>
+    
+    <!-- Scientific Notation Option -->
+    <div class="form-group form-check">
+      <input type="checkbox" class="form-check-input" id="sciNotation">
+      <label class="form-check-label" for="sciNotation">Display result in scientific notation</label>
+    </div>
+    
+    <!-- Convert Button -->
+    <button id="convertBtn" class="btn btn-primary btn-block">Convert</button>
+    
+    <!-- Result Display -->
+    <div class="result" id="result"></div>
+    
+    <!-- Conversion History -->
+    <h2>Conversion History</h2>
+    <ul id="history" class="list-group"></ul>
+    <button id="clearHistory" class="btn btn-outline-primary btn-block mt-2">Clear History</button>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Conversion data structure
+      const conversionData = {
+        "Length": {
+          baseUnit: "meter",
+          isLinear: true,
+          units: {
+            "meter": 1,
+            "inch": 0.0254,
+            "foot": 0.3048,
+            "yard": 0.9144,
+            "mile": 1609.34
+          }
+        },
+        "Mass": {
+          baseUnit: "kilogram",
+          isLinear: true,
+          units: {
+            "kilogram": 1,
+            "gram": 0.001,
+            "pound": 0.453592,
+            "ounce": 0.0283495
+          }
+        },
+        "Volume": {
+          baseUnit: "liter",
+          isLinear: true,
+          units: {
+            "liter": 1,
+            "cubic meter": 1000,
+            "cubic inch": 0.0163871,
+            "gallon (us)": 3.78541
+          }
+        },
+        "Temperature": {
+          baseUnit: "celsius",
+          isLinear: false,
+          units: {
+            "celsius": {
+              toBase: (x) => x,
+              fromBase: (x) => x
+            },
+            "fahrenheit": {
+              toBase: (x) => (x - 32) * 5/9,
+              fromBase: (x) => (x * 9/5) + 32
+            },
+            "kelvin": {
+              toBase: (x) => x - 273.15,
+              fromBase: (x) => x + 273.15
+            }
+          }
+        },
+        "Electric Field": {
+          baseUnit: "v/m",
+          isLinear: true,
+          units: {
+            "v/m": 1
+          }
+        },
+        "Magnetic Field": {
+          baseUnit: "tesla",
+          isLinear: true,
+          units: {
+            "tesla": 1
+          }
+        },
+        "Electric Charge": {
+          baseUnit: "coulomb",
+          isLinear: true,
+          units: {
+            "coulomb": 1
+          }
+        },
+        "Pressure": {
+          baseUnit: "pascal",
+          isLinear: true,
+          units: {
+            "pascal": 1,
+            "atmosphere": 101325,
+            "psi": 6894.76
+          }
+        },
+        "Speed": {
+          baseUnit: "meter/second",
+          isLinear: true,
+          units: {
+            "meter/second": 1,
+            "kilometer/hour": 0.27778,
+            "mile/hour": 0.44704,
+            "foot/second": 0.3048,
+            "centimeter/second": 0.01
+          }
+        }
+      };
+      
+      // SI prefixes (all in lower-case)
+      const SIPrefixes = {
+        "yotta": 1e24,
+        "zetta": 1e21,
+        "exa": 1e18,
+        "peta": 1e15,
+        "tera": 1e12,
+        "giga": 1e9,
+        "mega": 1e6,
+        "kilo": 1e3,
+        "hecto": 1e2,
+        "deka": 1e1,
+        "": 1,
+        "deci": 1e-1,
+        "centi": 1e-2,
+        "milli": 1e-3,
+        "micro": 1e-6,
+        "nano": 1e-9,
+        "pico": 1e-12,
+        "femto": 1e-15,
+        "atto": 1e-18,
+        "zepto": 1e-21,
+        "yocto": 1e-24
+      };
+      
+      // Helper function: adds SI prefixed units to a category.
+      // baseName: the unit name to prefix (e.g., "meter", "gram", "liter", "v/m", "tesla", "coulomb", "pascal", "meter/second")
+      // effectiveFactor: conversion factor for baseName relative to the category's base unit.
+      function addSIPrefixedUnits(category, baseName, effectiveFactor) {
+        const unitsObj = conversionData[category].units;
+        for (let prefix in SIPrefixes) {
+          if (prefix === "") continue; // skip the empty prefix (already defined)
+          let newKey = prefix + baseName; // e.g., "kilometer", "milligram", etc.
+          newKey = newKey.toLowerCase();
+          if (!(newKey in unitsObj)) {
+            unitsObj[newKey] = effectiveFactor * SIPrefixes[prefix];
+          }
+        }
+      }
+      
+      // Generate all SI prefixed units for relevant categories.
+      // Length: base is "meter" (effective factor 1)
+      addSIPrefixedUnits("Length", "meter", 1);
+      // Mass: use "gram" as the base for prefixes (1 gram = 0.001 kilogram)
+      addSIPrefixedUnits("Mass", "gram", 0.001);
+      // Volume: base is "liter"
+      addSIPrefixedUnits("Volume", "liter", 1);
+      // Electric Field: base is "v/m"
+      addSIPrefixedUnits("Electric Field", "v/m", 1);
+      // Magnetic Field: base is "tesla"
+      addSIPrefixedUnits("Magnetic Field", "tesla", 1);
+      // Electric Charge: base is "coulomb"
+      addSIPrefixedUnits("Electric Charge", "coulomb", 1);
+      // Pressure: base is "pascal"
+      addSIPrefixedUnits("Pressure", "pascal", 1);
+      // Speed: base is "meter/second"
+      addSIPrefixedUnits("Speed", "meter/second", 1);
+      
+      // Helper function to capitalize the first letter of each word.
+      function capitalizeWords(str) {
+        return str.replace(/\b\w/g, char => char.toUpperCase());
+      }
+      
+      function convertLinear(value, fromFactor, toFactor) {
+        return value * fromFactor / toFactor;
+      }
+      
+      function convertValue(category, fromUnit, toUnit, value) {
+        const cat = conversionData[category];
+        if (cat.isLinear) {
+          const fromFactor = cat.units[fromUnit];
+          const toFactor = cat.units[toUnit];
+          return convertLinear(value, fromFactor, toFactor);
+        } else {
+          const toBase = cat.units[fromUnit].toBase;
+          const fromBase = cat.units[toUnit].fromBase;
+          const baseValue = toBase(value);
+          return fromBase(baseValue);
+        }
+      }
+      
+      // Formats a number in appealing scientific notation (e.g., "1.234 × 10⁵")
+      function formatScientificNotation(value) {
+        let expStr = value.toExponential(3); // e.g., "1.234e+5"
+        let parts = expStr.split("e");
+        let coefficient = parts[0];
+        let exponent = parseInt(parts[1], 10);
+        return coefficient + " × 10<sup>" + exponent + "</sup>";
+      }
+      
+      function updateUnitOptions() {
+        const category = document.getElementById('category').value;
+        const fromSelect = document.getElementById('fromUnit');
+        const toSelect = document.getElementById('toUnit');
+        fromSelect.innerHTML = '';
+        toSelect.innerHTML = '';
+        const units = conversionData[category].units;
+        for (let unit in units) {
+          const displayUnit = capitalizeWords(unit);
+          const optionFrom = document.createElement('option');
+          optionFrom.value = unit;
+          optionFrom.textContent = displayUnit;
+          fromSelect.appendChild(optionFrom);
+          
+          const optionTo = document.createElement('option');
+          optionTo.value = unit;
+          optionTo.textContent = displayUnit;
+          toSelect.appendChild(optionTo);
+        }
+        document.getElementById('inputValue').value = '';
+        document.getElementById('result').textContent = '';
+      }
+      
+      function performConversion() {
+        const category = document.getElementById('category').value;
+        const fromUnit = document.getElementById('fromUnit').value;
+        const toUnit = document.getElementById('toUnit').value;
+        const inputVal = parseFloat(document.getElementById('inputValue').value);
+        
+        if (isNaN(inputVal)) {
+          document.getElementById('result').textContent = 'Please enter a valid number.';
+          return;
+        }
+        
+        let result = convertValue(category, fromUnit, toUnit, inputVal);
+        if (document.getElementById('sciNotation').checked) {
+          result = formatScientificNotation(result);
+        }
+        const resultText = `${inputVal} ${capitalizeWords(fromUnit)} = ${result} ${capitalizeWords(toUnit)}`;
+        document.getElementById('result').innerHTML = resultText;
+        addToHistory(resultText);
+      }
+      
+      function addToHistory(entry) {
+        const historyList = document.getElementById('history');
+        const li = document.createElement('li');
+        li.innerHTML = entry;
+        li.classList.add('list-group-item');
+        historyList.prepend(li);
+      }
+      
+      // Event listeners
+      document.getElementById('convertBtn').addEventListener('click', performConversion);
+      document.getElementById('inputValue').addEventListener('keyup', function(event) {
+        if (event.key === 'Enter') {
+          performConversion();
+        }
+      });
+      document.getElementById('clearHistory').addEventListener('click', function() {
+        document.getElementById('history').innerHTML = '';
+      });
+      document.getElementById('category').addEventListener('change', updateUnitOptions);
+      
+      updateUnitOptions();
+    });
+  </script>
+</body>
+</html>
